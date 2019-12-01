@@ -1,0 +1,14 @@
+{
+  "name": "tree-server",
+  "version": "1.0.0",
+  "description": "websocket server for the tree app",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Andy West",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/firestore": "^2.6.0",
+    "express": "^4.17.1",
+    "ws": "^7.2.0"
+  }
+}
