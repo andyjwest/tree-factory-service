@@ -1,41 +1,48 @@
 const serverPort = 8080;
-const http = require("http");
-const app = require("express")();
+const http = require('http');
+const app = require('express')();
 const server = http.createServer(app);
-const WebSocket = require("ws");
-const websocketServer = new WebSocket.Server({server});
-const Firestore = require('@google-cloud/firestore');
-const messageService = require('./message-service');
-const errorHandler = require('./error-handler');
+const io = require('socket.io')(server);
+const service = require('./service');
+const factoryRepo = require('./factory-repo');
+const ValidationError = require('./ValidationError');
 
-const db = new Firestore({
-    projectId: 'tree-factory-260112',
-    keyFilename: '/Users/awest/Documents/personal/tree-factory-c6e2671abf90.json',
+io.origins((origin, callback) => {
+  if (process.env.ALLOWED_ORIGIN) {
+    return callback(null, true);
+  }
+  console.warn(`someone is coming in from ${origin}`);
+  return callback('origin not allowed', false);
 });
 
-const collection = db.collection('factories');
+factoryRepo.initializeDBChangeListener(
+    (data) => io.emit('factories updated', data));
 
-websocketServer.on('connection', function connection(ws) {
+io.on('connection', function(socket) {
+  //Build a function to handle our errors
+  const handleError = e => {
+    if (e instanceof ValidationError) {
+      socket.emit('validation errors', e.validationErrors);
+    } else {
+      socket.emit('server error', e);
+    }
+  };
 
-    collection.get()
-        .then((snapshot)=> messageService.sendToAll(snapshot, websocketServer))
-        .catch((err) => {
-            console.log('Error getting documents', err);
-        });
+  //Send all the data to the socket once it connects
+  factoryRepo.getAll().
+      then(factories => socket.emit('factories updated', factories)).
+      catch(handleError);
 
-    ws.on('message', data => {
-        try{
-            messageService.processMessage(collection, data);
-        }catch (e) {
-            errorHandler.sendError(ws, e);
-        }
-    });
-});
+  socket.on('delete factory', (data) =>
+      factoryRepo.deleteFactoryById(data.id).catch(handleError));
 
-collection.onSnapshot((snapshot)=> messageService.sendToAll(snapshot, websocketServer), err => {
-    console.log(`Encountered error: ${err}`);
+  socket.on('add factory', data => service.addFactory(data).catch(handleError));
+
+  socket.on('update factory',
+      data => service.updateFactory(data).catch(handleError));
+
 });
 
 server.listen(serverPort, () => {
-    console.log(`Websocket server started on port ` + serverPort);
+  console.log(`Websocket server started on port ` + serverPort);
 });
