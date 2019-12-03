@@ -8,7 +8,7 @@ const factoryRepo = require('./factory-repo');
 const ValidationError = require('./ValidationError');
 
 io.origins((origin, callback) => {
-  if (process.env.ALLOWED_ORIGIN) {
+  if (process.env.ALLOWED_ORIGIN === origin) {
     return callback(null, true);
   }
   console.warn(`someone is coming in from ${origin}`);
