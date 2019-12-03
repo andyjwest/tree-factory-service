@@ -1,28 +1,27 @@
 const validator = require('./validation');
 const factoryRepo = require('./factory-repo');
+const generateRandomNumbers = (count, min, max) => Array(count).
+    fill(true).
+    map(() => Math.floor((Math.random() * max) + min));
 
 exports.addFactory = async (factory) => {
   try {
     validator.validateFactory(factory);
-    factory.nodes = generateRandomNumbers(factory.count, factory.min,
+    factory.nodes = generateRandomNumbers(factory.nodeCount, factory.min,
         factory.max);
+    factory.lastUpdated = new Date();
+    factory.createdDate = new Date();
     await factoryRepo.addFactory(factory);
   } catch (e) {
     throw e;
   }
 };
 
-function generateRandomNumbers(count, min, max) {
-  return Array(count).
-      fill(true).
-      map(() => Math.floor((Math.random() * max) + min));
-}
-
-exports.deleteFactory = (id) =>{
-  try{
+exports.deleteFactory = async (id) => {
+  try {
     validator.validateId(id);
-    factoryRepo.deleteFactoryById(id)
-  }catch (e) {
+    await factoryRepo.deleteFactoryById(id)
+  } catch (e) {
     throw e;
   }
 };
@@ -33,6 +32,7 @@ exports.updateFactory = async (factory) => {
     validator.validateFactory(factory);
     factory.nodes = generateRandomNumbers(factory.count, factory.min,
         factory.max);
+    factory.lastUpdated = new Date();
     await factoryRepo.updateFactory(factory);
   } catch (e) {
     throw e;
