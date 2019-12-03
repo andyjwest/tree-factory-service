@@ -1,4 +1,4 @@
-const serverPort = 8080;
+const serverPort = process.env.PORT;
 const http = require('http');
 const app = require('express')();
 const server = http.createServer(app);
