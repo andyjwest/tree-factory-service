@@ -10,6 +10,8 @@ const parseDocument = docs => docs.map(
     doc => ({id: doc.id, ...doc.data()}));
 
 exports.initializeDBChangeListener = sendToAll => {
+  // use google's firestore events to update all connected nodes when there is a
+  // change to the DB
   factoriesCollection.onSnapshot(
       (snapshot) => sendToAll(parseDocument(snapshot.docs)));
 };
